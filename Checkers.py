@@ -31,9 +31,16 @@ class Game:
                 newRow, newCol, delRow, delCol = self.player1.getMove(self.board, self.board.areas)
                 self.board.board[newRow][newCol] = self.player1.symbol
                 self.board.board[delRow][delCol] = ''
-
+                self.turn += 1
+                self.board.printBoard()
+                print()
             else:
-                newRow, newCol, delRow, delCol = self.player1.getMove(self.board, self.board.areas)
+                newRow, newCol, delRow, delCol = self.player2.getMove(self.board, self.board.areas)
+                self.board.board[newRow][newCol] = self.player2.symbol
+                self.board.board[delRow][delCol] = ''
+                self.turn += 1
+                self.board.printBoard()
+                print()
 
     def refreshBoard(self):
         draw.drawBoard(screen, WIDTH, HEIGHT)
@@ -57,7 +64,6 @@ class Board:
 
     def setupPieces(self, player1, player2):
         board = self.board
-
         # set up red pieces (player2)
         for rowIndex, row in enumerate(self.board):
             for columnIndex, column in enumerate(row):
@@ -135,6 +141,7 @@ class Player:
                                         draw.refreshTile(screen, row, column, self.title)
                                         continue
                                     elif self.validMove(board, selectedTile, row, column):
+
                                         return row, column, selectedTile[0], selectedTile[1]
                                     else:
                                         print('not allowed')
@@ -143,28 +150,47 @@ class Player:
         print(selectedTile)
         print(row, column)
         if self.symbol == 'O':
+            # Tile must move up a row and
+            # one column to left or right
+            # for white pieces
             if selectedTile[0] - row == 1:
                 if abs(selectedTile[1] - column) == 1:
                     if board.board[row][column] not in ['X', 'O']:
                         return True
+                    else:
+                        print('BLOCKED')
                 else:
                     return False
+            # If the player selected a tile two rows up
+            # and two columns over check for a possible jump
             elif selectedTile[0] - row == 2:
+                print('test')
                 if selectedTile[1] - column == 2:
-                    if board.board[row - 1][column + 1] == 'X':
+                    print('test2')
+                    if board.board[selectedTile[0] - 1][selectedTile[1] - 1] == 'X':
+                        return True
+                    else:
+                        print('NO JUMP')
+                elif selectedTile[1] - column == -2:
+                    print('test3')
+                    if board.board[selectedTile[0] - 1][selectedTile[1] + 1] == 'X':
+                        return True
+
+        elif self.symbol == 'X':
+            if row - selectedTile[0] == 1:
+                if abs(column - selectedTile[1]) == 1:
+                    if board.board[row][column] not in ['X', 'O']:
+                        return True
+                else:
+                    return False
+            elif row - selectedTile[0] == 2:
+                if column - selectedTile[1] == 2:
+                    if board.board[row + 1][column - 1] == 'O':
+                        return True
+                elif column - selectedTile[1] == -2:
+                    if board.board[row + 1][column + 1] == 'O':
                         return True
         return False
-
-
-
-class Tile:
-    def __init__(self, xCord, yCord, board):
-        self.xCord = xCord
-        self.Ycord = yCord
-        self.board = board
-
-    def moveTile(self):
-        pass
 
 gameBoard = Board()
 game = Game(gameBoard, 0)
