@@ -10,9 +10,6 @@ WIDTH = 600
 HEIGHT = 600
 
 # COLORS
-DARK_TEAL = (0, 104, 107)
-LIGHT_TEAL = (0, 191, 196)
-
 LIGHT_BROWN = (255,222,173)
 
 screen = pygame.display.set_mode((600, 600))
