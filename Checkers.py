@@ -9,17 +9,14 @@ pygame.display.set_caption("Checkers")
 WIDTH = 600
 HEIGHT = 600
 
-# COLORS
-LIGHT_BROWN = (255,222,173)
-
 screen = pygame.display.set_mode((600, 600))
 
 class Game:
     def __init__(self, board, turn):
         self.board = board
         self.turn = turn
-        self.player1 = Player(0, 'O')
-        self.player2 = Player(0, 'X')
+        self.player1 = Player('player1', 0, 'O')
+        self.player2 = Player('player2', 0, 'X')
         self.player1, self.player2 = self.board.setupPieces(self.player1, self.player2)
 
     def play(self):
@@ -39,7 +36,6 @@ class Game:
                 newRow, newCol, delRow, delCol = self.player1.getMove(self.board, self.board.areas)
 
     def refreshBoard(self):
-        screen.fill((LIGHT_BROWN))
         draw.drawBoard(screen, WIDTH, HEIGHT)
         draw.updateBoard(screen, WIDTH, HEIGHT, self.board)
         pygame.display.update()
@@ -106,7 +102,8 @@ class Board:
             print('-' * 25)
 
 class Player:
-    def __init__(self, tiles, symbol):
+    def __init__(self, title, tiles, symbol):
+        self.title = title
         self.tiles = tiles
         self.symbol = symbol
     def getMove(self, board, areas):
@@ -135,7 +132,7 @@ class Player:
                                     if row == selectedTile[0] and column == selectedTile[1]:
                                         clicks = 0
                                         selectedTile = []
-                                        game.refreshBoard()
+                                        draw.refreshTile(screen, row, column, self.title)
                                         continue
                                     elif self.validMove(board, selectedTile, row, column):
                                         return row, column, selectedTile[0], selectedTile[1]
