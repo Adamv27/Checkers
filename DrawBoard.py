@@ -1,11 +1,12 @@
 import pygame
 
 def drawBoard(WINDOW, WIDTH, HEIGHT):
-    for count, column in enumerate(range(9)):
-        pygame.draw.line(WINDOW, (0,0,0), (count * 75, 0), (count * 75, HEIGHT))
+    DARK_BROWN = (115,64,18)
 
-    for count, row in enumerate(range(9)):
-        pygame.draw.line(WINDOW, (0,0,0), (0, count * 75), (WIDTH, count * 75))
+    for row in range(8):
+        for column in range(8):
+            if (row + column) % 2 == 0:
+                pygame.draw.rect(WINDOW, DARK_BROWN, (row * 75, column * 75, 75, 75))
 
 def updateBoard(WINDOW, WIDTH, HEIGHT, board):
     for chipRow, row in enumerate(board.board):
@@ -15,7 +16,6 @@ def updateBoard(WINDOW, WIDTH, HEIGHT, board):
                     drawChip(WINDOW, chipColumn, chipRow,  'player1')
                 else:
                     drawChip(WINDOW, chipColumn, chipRow, 'player2')
-
 
 def drawChip(WINDOW, chipX, chipY, player):
     RED = (255,0,0)
@@ -28,5 +28,8 @@ def drawChip(WINDOW, chipX, chipY, player):
     X = (chipX * 75) + 37
     Y = (chipY * 75) + 37
 
-    pygame.draw.circle(WINDOW, color, (X , Y), 35)
+    pygame.draw.circle(WINDOW, color, (X , Y), 33)
     pygame.display.update()
+
+def drawHighlight(WINDOW, row, column):
+    pygame.draw.rect(WINDOW, (23,188,23), (column * 75, row * 75, 75, 75), 5)
