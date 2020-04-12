@@ -35,16 +35,14 @@ def drawChip(WINDOW, chipX, chipY, player):
 def drawHighlight(WINDOW, row, column):
     pygame.draw.rect(WINDOW, (23,188,23), ((column * 75) + 1, (row * 75)  + 1, 72, 72), 4)
 
-def refreshTile(WINDOW, board, row, column, player):
+def refreshTile(WINDOW, board, row, column):
     if (row + column) % 2 == 0:
         color = DARK_BROWN
     else:
         color = LIGHT_BROWN
 
     pygame.draw.rect(WINDOW, (color), ((column * 75, row * 75, 75, 75)))
-
-    print(board[row][column])
-    if player == 'player1' and board[row][column] == 'O':
+    if board[row][column] == 'O':
         drawChip(WINDOW, column, row, 'player1')
-    elif player == 'player2' and board[row][column] == 'X':
+    elif board[row][column] == 'X':
         drawChip(WINDOW, column, row, 'player2')

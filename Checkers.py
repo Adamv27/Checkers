@@ -28,20 +28,28 @@ class Game:
                     break
 
             if self.turn % 2 == 0:
-                newRow, newCol, delRow, delCol = self.player1.getMove(self.board, self.board.areas)
+                newRow, newCol, delRow, delCol, jumpedRow, jumpedColumn = self.player1.getMove(self.board, self.board.areas)
                 self.board.board[newRow][newCol] = self.player1.symbol
                 self.board.board[delRow][delCol] = ''
-                draw.refreshTile(screen, self.board.board, delRow, delCol, self.player1.title)
-                draw.refreshTile(screen, self.board.board, newRow, newCol, self.player1.title)
+                draw.refreshTile(screen, self.board.board, delRow, delCol)
+                draw.refreshTile(screen, self.board.board, newRow, newCol)
+                if jumpedRow > -1 and jumpedColumn > -1:
+                    self.board.board[jumpedRow][jumpedColumn] = ''
+                    print(self.board.board[jumpedRow][jumpedColumn])
+                    draw.refreshTile(screen, self.board.board, jumpedRow, jumpedColumn)
+                pygame.display.update()
                 self.turn += 1
-                self.board.printBoard()
                 print()
             else:
-                newRow, newCol, delRow, delCol = self.player2.getMove(self.board, self.board.areas)
+                newRow, newCol, delRow, delCol, jumpedRow, jumpedColumn = self.player2.getMove(self.board, self.board.areas)
                 self.board.board[newRow][newCol] = self.player2.symbol
                 self.board.board[delRow][delCol] = ''
-                draw.refreshTile(screen, self.board.board, delRow, delCol, self.player2.title)
-                draw.refreshTile(screen, self.board.board, newRow, newCol, self.player2.title)
+                draw.refreshTile(screen, self.board.board, delRow, delCol)
+                draw.refreshTile(screen, self.board.board, newRow, newCol)
+                if jumpedRow > -1 and jumpedColumn > -1:
+                    self.board.board[jumpedRow][jumpedColumn] = ''
+                    draw.refreshTile(screen, self.board.board, jumpedRow, jumpedColumn)
+                pygame.display.update()
                 self.turn += 1
                 print()
 
@@ -100,6 +108,9 @@ class Board:
                 areas.append(pygame.Rect((row * 75), (column * 75), 75, 75))
         return areas
 
+    def playMove(self, row, column, tileRow, tileColumn):
+        pass
+
     def printBoard(self):
         for row in self.board:
             for index, space in enumerate(row):
@@ -141,52 +152,97 @@ class Player:
                                     if row == selectedTile[0] and column == selectedTile[1]:
                                         clicks = 0
                                         selectedTile = []
-                                        draw.refreshTile(screen, board.board, row, column, self.title)
+                                        draw.refreshTile(screen, board.board, row, column)
                                         continue
-                                    elif self.validMove(board, selectedTile, row, column):
-
-                                        return row, column, selectedTile[0], selectedTile[1]
                                     else:
-                                        print('not allowed')
+                                        currentMove = Move(board.board, row, column, selectedTile[0], selectedTile[1], self.symbol)
+                                        if currentMove.isValid:
+                                            print('valid')
+                                            if currentMove.isJump:
+                                                print('JUMP')
+                                                return row, column, selectedTile[0], selectedTile[1], currentMove.jumpCords[0], currentMove.jumpCords[1]
+                                            return row, column, selectedTile[0], selectedTile[1], -1, -1
+                                        else:
+                                            print('not valid')
 
-    def validMove(self, board, selectedTile, row, column):
-        print(selectedTile)
-        print(row, column)
+class Move(object):
+    def __init__(self, board, row, column, tileRow, tileColumn, symbol):
+        self.board = board
+        self.row = row
+        self.column = column
+        self.tileRow = tileRow
+        self.tileColumn = tileColumn
+        self.symbol = symbol
+        self.isJump = False
+        self.jumpCords = []
+        self.isValid = self.validMove(board, tileRow, tileColumn, row, column)
+
+
+    def validMove(self, board, tileRow, tileColumn, row, column):
         if self.symbol == 'O':
             # Tile must move up a row and
             # one column to left or right
             # for white pieces
-            if selectedTile[0] - row == 1:
-                if abs(selectedTile[1] - column) == 1:
-                    if board.board[row][column] not in ['X', 'O']:
+            if tileRow - row == 1:
+                if abs(tileColumn - column) == 1:
+                    if board[row][column] not in ['X', 'O']:
                         return True
                 else:
                     return False
             # If the player selected a tile two rows up
             # and two columns over check for a possible jump
-            elif selectedTile[0] - row == 2:
-                if selectedTile[1] - column == 2:
-                    if board.board[selectedTile[0] - 1][selectedTile[1] - 1] == 'X':
-                        return True
-                elif selectedTile[1] - column == -2:
-                    if board.board[selectedTile[0] - 1][selectedTile[1] + 1] == 'X':
-                        return True
+            else:
+                if self.validJump(board, tileRow, tileColumn, row, column):
+                    self.isJump = True
+                    return True
 
         elif self.symbol == 'X':
-            if row - selectedTile[0] == 1:
-                if abs(column - selectedTile[1]) == 1:
-                    if board.board[row][column] not in ['X', 'O']:
+            if row - tileRow == 1:
+                if abs(column - tileColumn) == 1:
+                    if board[row][column] not in ['X', 'O']:
                         return True
                 else:
                     return False
-            elif row - selectedTile[0] == 2:
-                if column - selectedTile[1] == 2:
-                    if board.board[selectedTile[0] + 1][selectedTile[1] + 1] == 'O':
-                        return True
-                elif column - selectedTile[1] == -2:
-                    if board.board[selectedTile[0] + 1][selectedTile[1] - 1] == 'O':
-                        return True
+            else:
+                if self.validJump(board, tileRow, tileColumn, row, column):
+                    self.isJump = True
+                    return True
         return False
+
+    def validJump(self, board, tileRow, tileColumn, row, column):
+        if self.symbol == 'O':
+            # A jump would be an extra row forward
+            if tileRow - row == 2:
+                # Jumping up and to the left
+                if tileColumn - column == 2:
+                    if board[tileRow - 1][tileColumn - 1] == 'X':
+                        self.jumpCords.append(tileRow - 1)
+                        self.jumpCords.append(tileColumn - 1)
+                        return True
+                # Jumping up and to the right
+                elif tileColumn - column == -2:
+                    if board[tileRow - 1][tileColumn + 1] == 'X':
+                        self.jumpCords.append(tileRow - 1)
+                        self.jumpCords.append(tileColumn + 1)
+                        return True
+
+        elif self.symbol == 'X':
+            if row - tileRow == 2:
+                if column - tileColumn == 2:
+                    if board[tileRow + 1][tileColumn + 1] == 'O':
+                        self.jumpCords.append(tileRow + 1)
+                        self.jumpCords.append(tileColumn + 1)
+                        return True
+
+                elif column - tileColumn == -2:
+                    if board[tileRow + 1][tileColumn - 1] == 'O':
+                        self.jumpCords.append(tileRow + 1)
+                        self.jumpCords.append(tileColumn - 1)
+                        return True
+
+
+
+
 
 gameBoard = Board()
 game = Game(gameBoard, 0)
