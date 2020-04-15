@@ -17,7 +17,7 @@ class Game:
         self.turn = turn
         self.player1 = Player('player1', 0, 'O')
         self.player2 = Player('player2', 0, 'X')
-        self.player1, self.player2 = self.board.setupPieces(self.player1, self.player2)
+        self.board.setupPieces(self.player1, self.player2)
 
     def play(self):
         self.refreshBoard()
@@ -28,29 +28,16 @@ class Game:
                     break
 
             if self.turn % 2 == 0:
-                newRow, newCol, delRow, delCol, jumpedRow, jumpedColumn = self.player1.getMove(self.board, self.board.areas)
-                self.board.board[newRow][newCol] = self.player1.symbol
-                self.board.board[delRow][delCol] = ''
-                draw.refreshTile(screen, self.board.board, delRow, delCol)
-                draw.refreshTile(screen, self.board.board, newRow, newCol)
-                if jumpedRow > -1 and jumpedColumn > -1:
-                    self.board.board[jumpedRow][jumpedColumn] = ''
-                    print(self.board.board[jumpedRow][jumpedColumn])
-                    draw.refreshTile(screen, self.board.board, jumpedRow, jumpedColumn)
+                self.player1.getMove(self.board, self.board.areas)
                 pygame.display.update()
+                self.board.printBoard()
                 self.turn += 1
                 print()
             else:
-                newRow, newCol, delRow, delCol, jumpedRow, jumpedColumn = self.player2.getMove(self.board, self.board.areas)
-                self.board.board[newRow][newCol] = self.player2.symbol
-                self.board.board[delRow][delCol] = ''
-                draw.refreshTile(screen, self.board.board, delRow, delCol)
-                draw.refreshTile(screen, self.board.board, newRow, newCol)
-                if jumpedRow > -1 and jumpedColumn > -1:
-                    self.board.board[jumpedRow][jumpedColumn] = ''
-                    draw.refreshTile(screen, self.board.board, jumpedRow, jumpedColumn)
+                self.player2.getMove(self.board, self.board.areas)
                 pygame.display.update()
                 self.turn += 1
+                self.board.printBoard()
                 print()
 
     def refreshBoard(self):
@@ -76,29 +63,18 @@ class Board:
     def setupPieces(self, player1, player2):
         board = self.board
         # set up red pieces (player2)
+        symbol = 'X'
         for rowIndex, row in enumerate(self.board):
             for columnIndex, column in enumerate(row):
-                if (rowIndex == 0 or rowIndex == 2) and player2.tiles <= 12:
-                    if columnIndex % 2 == 0:
-                        self.board[rowIndex][columnIndex] = 'X'
-                        player2.tiles += 1
-                elif rowIndex == 1:
-                    if columnIndex % 2 != 0:
-                        self.board[rowIndex][columnIndex] = 'X'
+                if (rowIndex + columnIndex) % 2 == 0 and (rowIndex < 3 or rowIndex > 4):
+                    if player1.tiles == 12:
+                        symbol = 'O'
+                    self.board[rowIndex][columnIndex] = symbol
+                    if symbol == 'X':
+                        player1.tiles += 1
+                    else:
                         player2.tiles += 1
 
-        # set up white pieces (player1)
-        for rowIndex, row in enumerate(reversed(self.board)):
-            for columnIndex, column in enumerate(reversed(row)):
-                if rowIndex == len(self.board) - 1 or rowIndex == len(self.board) - 3:
-                    if player2.tiles <= 12:
-                        if columnIndex % 2 != 0:
-                            self.board[rowIndex][columnIndex] = 'O'
-                            player1.tiles += 1
-                elif rowIndex == len(self.board) - 2:
-                    if columnIndex % 2 == 0:
-                        self.board[rowIndex][columnIndex] = 'O'
-                        player1.tiles += 1
         return player1, player2
 
     def getAreas(self):
@@ -108,8 +84,17 @@ class Board:
                 areas.append(pygame.Rect((row * 75), (column * 75), 75, 75))
         return areas
 
-    def playMove(self, row, column, tileRow, tileColumn):
-        pass
+    def playMove(self, row, column, tileRow, tileColumn, symbol):
+        self.board[row][column] = symbol
+        self.board[tileRow][tileColumn] = ''
+        draw.refreshTile(screen, self.board, row, column)
+        draw.refreshTile(screen, self.board, tileRow, tileColumn)
+        return self.board
+
+    def jump(self, row, column):
+        self.board[row][column] = ''
+        draw.refreshTile(screen, self.board, row, column)
+        return self.board
 
     def printBoard(self):
         for row in self.board:
@@ -159,11 +144,16 @@ class Player:
                                         if currentMove.isValid:
                                             print('valid')
                                             if currentMove.isJump:
-                                                print('JUMP')
-                                                return row, column, selectedTile[0], selectedTile[1], currentMove.jumpCords[0], currentMove.jumpCords[1]
-                                            return row, column, selectedTile[0], selectedTile[1], -1, -1
+                                                print('jump')
+                                                board.playMove(row, column, selectedTile[0], selectedTile[1], self.symbol)
+                                                board.jump(currentMove.jumpCords[0], currentMove.jumpCords[1])
+                                            board.playMove(row, column, selectedTile[0], selectedTile[1], self.symbol)
+                                            return board
                                         else:
-                                            print('not valid')
+                                            if currentMove.validMultiJump:
+                                                print('valid')
+                                            else:
+                                                print('not valid')
 
 class Move(object):
     def __init__(self, board, row, column, tileRow, tileColumn, symbol):
