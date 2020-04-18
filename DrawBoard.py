@@ -14,11 +14,15 @@ def updateBoard(WINDOW, WIDTH, HEIGHT, board):
         for chipColumn, space in enumerate(row):
             if space != '':
                 if space == 'O':
-                    drawChip(WINDOW, chipColumn, chipRow,  'player1')
-                else:
-                    drawChip(WINDOW, chipColumn, chipRow, 'player2')
+                    drawChip(WINDOW, chipColumn, chipRow,  'player1', False)
+                elif space == 'OK':
+                    drawChip(WINDOW, column, row, 'player1', True)
+                elif space == 'X':
+                    drawChip(WINDOW, chipColumn, chipRow, 'player2', False)
+                elif space == 'XK':
+                    drawChip(WINDOW, column, row, 'player2', True)
 
-def drawChip(WINDOW, chipX, chipY, player):
+def drawChip(WINDOW, chipX, chipY, player, isKing):
     RED = (255,0,0)
     WHITE = (255,255,255)
     if player == 'player1':
@@ -30,6 +34,11 @@ def drawChip(WINDOW, chipX, chipY, player):
     Y = (chipY * 75) + 37
 
     pygame.draw.circle(WINDOW, color, (X , Y), 33)
+
+    if isKing:
+        image = pygame.image.load('crown.png')
+        image = pygame.transform.scale(image, (55,55))
+        WINDOW.blit(image, (X - 28,Y - 28))
     pygame.display.update()
 
 def drawHighlight(WINDOW, row, column):
@@ -43,6 +52,10 @@ def refreshTile(WINDOW, board, row, column):
 
     pygame.draw.rect(WINDOW, (color), ((column * 75, row * 75, 75, 75)))
     if board[row][column] == 'O':
-        drawChip(WINDOW, column, row, 'player1')
+        drawChip(WINDOW, column, row, 'player1', False)
+    elif board[row][column] == 'OK':
+        drawChip(WINDOW, column, row, 'player1', True)
     elif board[row][column] == 'X':
-        drawChip(WINDOW, column, row, 'player2')
+        drawChip(WINDOW, column, row, 'player2', False)
+    elif board[row][column] == 'XK':
+        drawChip(WINDOW, column, row, 'player2', True)

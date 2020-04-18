@@ -21,6 +21,7 @@ class Game:
 
     def play(self):
         self.refreshBoard()
+        self.board.printBoard()
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -61,21 +62,10 @@ class Board:
         return board
 
     def setupPieces(self, player1, player2):
-        board = self.board
-        # set up red pieces (player2)
-        symbol = 'X'
-        for rowIndex, row in enumerate(self.board):
-            for columnIndex, column in enumerate(row):
-                if (rowIndex + columnIndex) % 2 == 0 and (rowIndex < 3 or rowIndex > 4):
-                    if player1.tiles == 12:
-                        symbol = 'O'
-                    self.board[rowIndex][columnIndex] = symbol
-                    if symbol == 'X':
-                        player1.tiles += 1
-                    else:
-                        player2.tiles += 1
+        self.board[0][4] = 'X'
+        self.board[7][3] = 'O'
 
-        return player1, player2
+        return
 
     def getAreas(self):
         areas = []
@@ -142,17 +132,25 @@ class Player:
                                     else:
                                         currentMove = Move(board.board, row, column, selectedTile[0], selectedTile[1], self.symbol)
                                         if currentMove.isValid:
+                                            symbol = self.symbol
+                                            if currentMove.isKingMove:
+                                                if symbol == 'X':
+                                                    symbol = 'XK'
+                                                elif symbol == 'O':
+                                                    symbol = 'OK'
+
                                             print('valid')
                                             if currentMove.isJump:
                                                 print('jump')
-                                                board.playMove(row, column, selectedTile[0], selectedTile[1], self.symbol)
+                                                board.playMove(row, column, selectedTile[0], selectedTile[1], symbol)
                                                 board.jump(currentMove.jumpCords[0], currentMove.jumpCords[1])
-                                            board.playMove(row, column, selectedTile[0], selectedTile[1], self.symbol)
-                                            return board
-                                        else:
-                                            if currentMove.validMultiJump:
-                                                print('valid')
                                             else:
+                                                board.playMove(row, column, selectedTile[0], selectedTile[1], symbol)
+                                            return
+                                        else:
+                                            #if currentMove.validMultiJump:
+                                                #print('valid')
+                                            #else:
                                                 print('not valid')
 
 class Move(object):
@@ -165,74 +163,75 @@ class Move(object):
         self.symbol = symbol
         self.isJump = False
         self.jumpCords = []
-        self.isValid = self.validMove(board, tileRow, tileColumn, row, column)
+        self.isValid = self.validMove()
+        self.isKingMove = self.isKing()
 
-
-    def validMove(self, board, tileRow, tileColumn, row, column):
+    def validMove(self):
         if self.symbol == 'O':
             # Tile must move up a row and
             # one column to left or right
             # for white pieces
-            if tileRow - row == 1:
-                if abs(tileColumn - column) == 1:
-                    if board[row][column] not in ['X', 'O']:
+            if self.tileRow - self.row == 1:
+                if abs(self.tileColumn - self.column) == 1:
+                    if self.board[self.row][self.column] not in ['X', 'O']:
                         return True
                 else:
                     return False
             # If the player selected a tile two rows up
             # and two columns over check for a possible jump
             else:
-                if self.validJump(board, tileRow, tileColumn, row, column):
+                if self.validJump():
                     self.isJump = True
                     return True
 
         elif self.symbol == 'X':
-            if row - tileRow == 1:
-                if abs(column - tileColumn) == 1:
-                    if board[row][column] not in ['X', 'O']:
+            if self.row - self.tileRow == 1:
+                if abs(self.column - self.tileColumn) == 1:
+                    if self.board[self.row][self.column] not in ['X', 'O']:
                         return True
                 else:
                     return False
             else:
-                if self.validJump(board, tileRow, tileColumn, row, column):
+                if self.validJump():
                     self.isJump = True
                     return True
         return False
 
-    def validJump(self, board, tileRow, tileColumn, row, column):
+    def validJump(self):
         if self.symbol == 'O':
             # A jump would be an extra row forward
-            if tileRow - row == 2:
+            if self.tileRow - self.row == 2:
                 # Jumping up and to the left
-                if tileColumn - column == 2:
-                    if board[tileRow - 1][tileColumn - 1] == 'X':
-                        self.jumpCords.append(tileRow - 1)
-                        self.jumpCords.append(tileColumn - 1)
+                if self.tileColumn - self.column == 2:
+                    if self.board[self.tileRow - 1][self.tileColumn - 1] == 'X':
+                        self.jumpCords.append(self.tileRow - 1)
+                        self.jumpCords.append(self.tileColumn - 1)
                         return True
                 # Jumping up and to the right
-                elif tileColumn - column == -2:
-                    if board[tileRow - 1][tileColumn + 1] == 'X':
-                        self.jumpCords.append(tileRow - 1)
-                        self.jumpCords.append(tileColumn + 1)
+                elif self.tileColumn - self.column == -2:
+                    if self.board[self.tileRow - 1][self.tileColumn + 1] == 'X':
+                        self.jumpCords.append(self.tileRow - 1)
+                        self.jumpCords.append(self.tileColumn + 1)
                         return True
 
         elif self.symbol == 'X':
-            if row - tileRow == 2:
-                if column - tileColumn == 2:
-                    if board[tileRow + 1][tileColumn + 1] == 'O':
-                        self.jumpCords.append(tileRow + 1)
-                        self.jumpCords.append(tileColumn + 1)
+            if self.row - self.tileRow == 2:
+                if self.column - self.tileColumn == 2:
+                    if self.board[self.tileRow + 1][self.tileColumn + 1] == 'O':
+                        self.jumpCords.append(self.tileRow + 1)
+                        self.jumpCords.append(self.tileColumn + 1)
                         return True
 
-                elif column - tileColumn == -2:
-                    if board[tileRow + 1][tileColumn - 1] == 'O':
-                        self.jumpCords.append(tileRow + 1)
-                        self.jumpCords.append(tileColumn - 1)
+                elif self.column - self.tileColumn == -2:
+                    if self.board[self.tileRow + 1][self.tileColumn - 1] == 'O':
+                        self.jumpCords.append(self.tileRow + 1)
+                        self.jumpCords.append(self.tileColumn - 1)
                         return True
-
-
-
-
+    def isKing(self):
+        if self.symbol == 'O' and self.row == 0:
+            return True
+        elif self.symbol == 'X' and self.row == 7:
+            return True
 
 gameBoard = Board()
 game = Game(gameBoard, 0)
