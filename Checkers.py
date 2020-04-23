@@ -65,12 +65,22 @@ class Board:
         return board
 
     def setupPieces(self, player1, player2):
-        self.board[0][4] = 'X'
-        self.board[7][3] = 'O'
-
+        symbol = 'X'
+        for rowIndex, row in enumerate(self.board):
+            for columnIndex, column in enumerate(row):
+                if (rowIndex + columnIndex) % 2 == 0 and (rowIndex < 3 or rowIndex > 4):
+                    if player1.tiles == 12:
+                        symbol = 'O'
+                    self.board[rowIndex][columnIndex] = symbol
+                    if symbol == 'X':
+                        player1.tiles += 1
+                    else:
+                        player2.tiles += 1
         return
 
     def getAreas(self):
+        # Each area is a different square on the board so that
+        # a player can select where to move
         areas = []
         for row in range(8):
             for column in range(8):
@@ -133,6 +143,7 @@ class Player:
                             if area.collidepoint(event.pos):
                                 row = areas.index(area) % 8
                                 column = math.floor(areas.index(area) / 8)
+                                # First click should be on the players own tile
                                 if clicks == 0:
                                     if board.board[row][column] in [self.symbol, self.king]:
                                         draw.drawHighlight(screen, row, column)
@@ -140,12 +151,16 @@ class Player:
                                         selectedTile.append(row)
                                         selectedTile.append(column)
                                         clicks = 1
+                                # If theres a second click on the same tile then
+                                # the player is trying to deselect that tile
                                 else:
                                     if row == selectedTile[0] and column == selectedTile[1]:
                                         clicks = 0
                                         selectedTile = []
                                         draw.refreshTile(screen, board.board, row, column)
                                         continue
+                                    # If the second click is anywhere else then
+                                    # check if the player selected a valid move
                                     else:
                                         currentMove = Move(board.board, row, column, selectedTile[0], selectedTile[1], board.board[selectedTile[0]][selectedTile[1]])
                                         if currentMove.isValid:
@@ -184,12 +199,16 @@ class Move(object):
     def validMove(self, row, column, tileRow, tileColumn, symbol, board):
         if symbol in ['X', 'O', 'XK', 'OK']:
             if tileRow - row == 1:
+                # Non king red can only move down
                 if symbol == 'X':
                     return False
+                # Non jump moves can only be one column over to the
+                # right or left
                 if abs(tileColumn - column) == 1:
                     if board[row][column] == '':
                         return True
             elif tileRow - row == -1:
+                # Non king red can only move up
                 if symbol == 'O':
                     return False
                 if abs(tileColumn - column) == 1:
