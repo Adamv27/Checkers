@@ -41,6 +41,9 @@ class Game:
                 self.board.printBoard()
                 print()
 
+            if self.board.isWin():
+                print('win')
+                break
     def refreshBoard(self):
         draw.drawBoard(screen, WIDTH, HEIGHT)
         draw.updateBoard(screen, WIDTH, HEIGHT, self.board)
@@ -96,6 +99,19 @@ class Board:
             print()
             print('-' * 25)
 
+    def isWin(self):
+        p1Count = 0
+        p2Count = 0
+
+        for row in self.board:
+            for tile in row:
+                if tile in ['X', 'XK']:
+                    p1Count += 1
+                elif tile in ['O', 'OK']:
+                    p2Count += 1
+
+        return p1Count == 0 or p2Count == 0
+
 class Player:
     def __init__(self, title, tiles, symbol):
         self.title = title
@@ -150,9 +166,6 @@ class Player:
                                                 board.playMove(row, column, selectedTile[0], selectedTile[1], symbol)
                                             return
                                         else:
-                                            #if currentMove.validMultiJump:
-                                                #print('valid')
-                                            #else:
                                                 print('not valid')
 
 class Move(object):
@@ -169,9 +182,6 @@ class Move(object):
         self.isKingMove = self.isKing()
 
     def validMove(self, row, column, tileRow, tileColumn, symbol, board):
-        print(row, column)
-        print()
-        print(tileRow, tileColumn)
         if symbol in ['X', 'O', 'XK', 'OK']:
             if tileRow - row == 1:
                 if symbol == 'X':
@@ -219,7 +229,6 @@ class Move(object):
                     self.jumpCords.append(self.tileColumn - 1)
                     return True
             elif tileColumn - column == -2:
-                print('test')
                 if board[tileRow + 1][tileColumn + 1] in opposites:
                     self.jumpCords.append(self.tileRow + 1)
                     self.jumpCords.append(self.tileColumn + 1)
